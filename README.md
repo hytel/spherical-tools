@@ -6,7 +6,7 @@ The "utility" folder contains the "image_to_cubemap" C++ code which can turn an 
 
 Here's a quick example.  If you have a raw equirectangular image as a cubemap_one.dng from your spherical camera like:
 
-![alt text](./docs/source_image.jpg "Source Equirectangular Image From Camera")
+![alt text](docs/source_image.jpg?raw=true "Source Equirectangular Image From Camera")
 
 Then you can build the "image_to_cubemap" utility in Linux or MacOS (using brew) by using CMake.  You must have the Qt6 (image editing and saving) and libraw (to read DNG files) libraries install which are easily available on MacOS (brew) and Linux.  You can compile the utility in the standard way like this:
 
