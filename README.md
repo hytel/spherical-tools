@@ -46,7 +46,7 @@ Saved Cubemap to DDS: ../cubemap_one.dds
 
 You should now have a cubemap_one.png that looks something like this:
 
-![alt text](./docs/cubemap_png.jpg "Converted Cubemap PNG")
+![alt text](docs/cubemap_png.jpg?raw=true "Converted Cubemap PNG")
 
 The DDS file is harder to see directly (gimp will load it) and is more like a stack of six layers in image editors.   To see this cubemap in the browser, edit the cubemaps.txt file in the "www" folder and add an entry like:
 
@@ -58,7 +58,7 @@ http://localhost:8080/index.html
 
 You should see your cubemap come up.  it should look something like:
 
-![alt text](./docs/cubemap_web.jpg "Cubemap DDS Web Viewer")
+![alt text](docs/cubemap_web.jpg?raw=true "Cubemap DDS Web Viewer")
 
 You can use the mouse to spin the view around.  There is also a symbol in the bottom right of the page which will show the controls so you can pick a different cubemap from your selection in the cubemaps.txt file.  The controls do come up for a split second when the page is first loaded, but I have the HTML automatically select the first cubemap which causes the controls to slowly hide until the button is pressed.
 
