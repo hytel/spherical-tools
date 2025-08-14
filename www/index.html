@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Hillel DDS Cubemap Viewer</title>
+
+    <script src="scripts/tailwind.js"></script>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "./scripts/three.module.js",
+                "three/addons/": "./addons/"
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow: hidden; /* Hide scrollbars */
+        }
+        canvas {
+            display: block;
+        }
+        /* Custom styles for the controls container to allow for smooth transitions */
+        .controls-transition {
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: auto; /* Enable clicks by default */
+        }
+        .controls-hidden {
+            opacity: 0;
+            pointer-events: none; /* Disable clicks when hidden */
+        }
+    </style>
+
+</head>
+
+<body class="bg-gray-900 text-gray-100 flex flex-col items-center justify-center h-screen w-screen">
+
+    <!-- Main Container for Controls -->
+    <div id="controls-container" class="controls-transition p-6 rounded-xl shadow-2xl bg-gray-800 border border-gray-700 w-full max-w-2xl text-center z-10 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+        <h1 class="text-3xl font-bold mb-4 text-white">DDS Cubemap Viewer</h1>
+        <p class="text-gray-400 mb-6">Select a predefined DDS cubemap to view. Use your mouse to rotate the scene.</p>
+        
+        <!-- Cubemap Selection Dropdown -->
+        <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+            <select id="cubemap-select" class="block w-full sm:w-auto text-sm text-gray-300 bg-gray-700 py-2 px-4 rounded-full border-0 focus:ring-violet-500 focus:border-violet-500">
+                <!-- Options will be populated by JavaScript -->
+            </select>
+        </div>
+        
+        <!-- Status Message Box -->
+        <div id="status-message" class="bg-gray-700 text-sm text-gray-300 p-3 rounded-lg mt-4 hidden">
+            <!-- Messages will be displayed here -->
+        </div>
+    </div>
+
+    <!-- Toggle Controls Button -->
+    <button id="toggle-controls-btn" class="absolute bottom-6 right-6 z-20 w-12 h-12 bg-violet-600 hover:bg-violet-700 text-white rounded-full shadow-lg transition-transform transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-gray-900">
+        <!-- SVG for an icon -->
+        <svg id="toggle-icon-on" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+        <svg id="toggle-icon-off" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 1.274-4.057 5.064-7 9.542-7a10.05 10.05 0 015.657 1.875m-3.515 9.172a3 3 0 11-4.243-4.243m1.414 1.414a3 3 0 104.243 4.243zM10.5 10.5L21 21" />
+        </svg>
+    </button>
+
+    <!-- 3D Canvas -->
+    <canvas id="cubemap-canvas" class="flex-grow"></canvas>
+
+    <script type="module">
+
+        /*-----------------------------------------------------------------------------
+        The MIT License
+        
+        Copyright © 2025-present Hillel Steinberg
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in
+        all copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+        THE SOFTWARE.
+        -----------------------------------------------------------------------------*/
+
+        // Synchronously load the list of cubmap names at DDS data file paths from provided URL
+        function loadCubemapsSync(url) {
+            const xhr = new XMLHttpRequest();
+            xhr.open("GET", url, false); // false = synchronous
+            xhr.send(null);
+        
+            if (xhr.status === 200) {
+                const dict = {};
+                xhr.responseText.split(/\r?\n/).forEach(line => {
+                    if (line.trim() && !line.startsWith('#')) {
+                        const [key, value] = line.split('=');
+                        dict[key.trim()] = value.trim();
+                    }
+                });
+                return dict;
+            }
+            throw new Error("Failed to load " + url);
+        }
+    
+        // Import Three.js and OrbitControls using ES Modules and the importmap
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        const CUBEMAPS = loadCubemapsSync("cubemaps.txt");
+
+        // --- Scene Setup ---
+        let scene, camera, renderer, controls;
+        const canvas = document.getElementById('cubemap-canvas');
+        const cubemapSelect = document.getElementById('cubemap-select');
+        const statusMessage = document.getElementById('status-message');
+        const controlsContainer = document.getElementById('controls-container');
+        const toggleControlsBtn = document.getElementById('toggle-controls-btn');
+        const toggleIconOn = document.getElementById('toggle-icon-on');
+        const toggleIconOff = document.getElementById('toggle-icon-off');
+
+        // Initializes the Three.js scene, camera, renderer, and controls.
+        function init() {
+
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1f2937); // Dark gray background
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 2;
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            // Controls for camera movement
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true; // gives a more fluid feeling to the rotation
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = false;
+            controls.minDistance = 0; // Allow moving close to the center
+            controls.maxDistance = 1; // Limit movement to stay inside the cubemap
+            controls.enableZoom = false; // Disable zooming to better simulate a static environment
+
+            // Handle window resizing
+            window.addEventListener('resize', onWindowResize, false);
+
+            // Populate the dropdown with the predefined cubemaps
+            populateCubemapDropdown();
+
+            // Load the first cubemap by default
+            loadCubemap(Object.values(CUBEMAPS)[0]);
+
+            // Add event listener to toggle controls
+            toggleControlsBtn.addEventListener('click', toggleControls);
+
+            // Start the animation loop
+            animate();
+        }
+
+        // Toggles the visibility of the main controls container
+        function toggleControls() {
+            if (controlsContainer.classList.contains('controls-hidden')) {
+                // If currently hidden, show it
+                controlsContainer.classList.remove('controls-hidden');
+                toggleIconOn.classList.remove('hidden');
+                toggleIconOff.classList.add('hidden');
+            } else {
+                // If currently visible, hide it
+                controlsContainer.classList.add('controls-hidden');
+                toggleIconOn.classList.add('hidden');
+                toggleIconOff.classList.remove('hidden');
+            }
+        }
+
+        // Populates the dropdown menu with options from the CUBEMAPS object
+        function populateCubemapDropdown() {
+            for (const name in CUBEMAPS) {
+                const option = document.createElement('option');
+                option.value = CUBEMAPS[name];
+                option.textContent = name;
+                cubemapSelect.appendChild(option);
+            }
+        }
+
+        // Renders the scene and updates the controls on each frame
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Resizes the renderer and updates the camera aspect ratio on window resize
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        /**
+         * Displays a message in the status box.
+         * @param {string} message - The message to display.
+         * @param {string} type - The type of message ('success', 'error', 'info').
+         */
+        function showMessage(message, type = 'info') {
+            statusMessage.textContent = message;
+            statusMessage.className = 'bg-gray-700 text-sm p-3 rounded-lg mt-4';
+            
+            if (type === 'success') {
+                statusMessage.classList.add('text-green-400', 'bg-green-900/50');
+            } else if (type === 'error') {
+                statusMessage.classList.add('text-red-400', 'bg-red-900/50');
+            } else {
+                statusMessage.classList.add('text-gray-300', 'bg-gray-700');
+            }
+            
+            statusMessage.classList.remove('hidden');
+        }
+
+        // --- DDS Parsing Logic ---
+
+        /**
+         * Helper function to find the right-shift for a given bitmask.
+         * @param {number} mask - The bitmask to check.
+         * @returns {number} The number of bits to right-shift.
+         */
+        function getShiftAmount(mask) {
+            if (mask === 0) return 0;
+            let shift = 0;
+            while ((mask & 1) === 0) {
+                mask >>= 1;
+                shift++;
+            }
+            return shift;
+        }
+
+        /**
+         * Resizes a Uint8Array image data buffer using nearest-neighbor downsampling.
+         * @param {Uint8Array} sourceData - The original pixel data.
+         * @param {number} sourceWidth - The width of the original image.
+         * @param {number} sourceHeight - The height of the original image.
+         * @param {number} targetWidth - The desired new width.
+         * @param {number} targetHeight - The desired new height.
+         * @returns {Uint8Array} The new, resized pixel data.
+         */
+        function resizeImageData(sourceData, sourceWidth, sourceHeight, targetWidth, targetHeight) {
+            const outputData = new Uint8Array(targetWidth * targetHeight * 4);
+            const xRatio = sourceWidth / targetWidth;
+            const yRatio = sourceHeight / targetHeight;
+
+            for (let y = 0; y < targetHeight; y++) {
+                for (let x = 0; x < targetWidth; x++) {
+                    const srcX = Math.floor(x * xRatio);
+                    const srcY = Math.floor(y * yRatio);
+                    const sourcePixelOffset = (srcY * sourceWidth + srcX) * 4;
+                    const outputPixelOffset = (y * targetWidth + x) * 4;
+
+                    // Copy RGBA channels
+                    outputData[outputPixelOffset] = sourceData[sourcePixelOffset];
+                    outputData[outputPixelOffset + 1] = sourceData[sourcePixelOffset + 1];
+                    outputData[outputPixelOffset + 2] = sourceData[sourcePixelOffset + 2];
+                    outputData[outputPixelOffset + 3] = sourceData[sourcePixelOffset + 3];
+                }
+            }
+            return outputData;
+        }
+
+        /**
+         * Parses a .dds file ArrayBuffer to extract cubemap data.
+         * This parser is now more robust for uncompressed RGB/RGBA files with various channel orders.
+         * @param {ArrayBuffer} buffer - The binary data of the DDS file.
+         * @returns {Object} An object containing the texture data for each face.
+         */
+        function parseDDS(buffer) {
+
+            const header = new DataView(buffer, 0, 128);
+            const FOURCC_DXT1 = 0x31545844; // 'DXT1'
+            const FOURCC_DXT3 = 0x33545844; // 'DXT3'
+            const FOURCC_DXT5 = 0x35545844; // 'DXT5'
+            const DDPF_ALPHAPIXELS = 0x1;
+            const DDPF_FOURCC = 0x4;
+            const DDPF_RGB = 0x40;
+            const DDSCAPS2_CUBEMAP = 0x200;
+
+            // Check for 'DDS ' magic number
+            if (header.getUint32(0, true) !== 0x20534444) { // "DDS "
+                throw new Error("Invalid DDS file header: missing magic number.");
+            }
+
+            const dwSize = header.getUint32(4, true);
+            if (dwSize !== 124) {
+                throw new Error("Unsupported DDS file header size.");
+            }
+            
+            const dwFlags = header.getUint32(8, true);
+            let dwHeight = header.getUint32(12, true);
+            let dwWidth = header.getUint32(16, true);
+            const dwCaps2 = header.getUint32(112, true);
+            const ddspf = new DataView(buffer, 76, 32);
+
+            // Check if it's a cubemap
+            if (!(dwCaps2 & DDSCAPS2_CUBEMAP)) {
+                throw new Error("This is not a cubemap DDS file.");
+            }
+
+            // Check for compressed formats, which are not supported by this parser.
+            let dwPixelFormatFlags = ddspf.getUint32(4, true);
+            
+            // Make sure the DDS isn't using a compressed texture format (unsupported right now)
+            if (dwPixelFormatFlags & DDPF_FOURCC) {
+
+                const fourCC = ddspf.getUint32(4, true);
+                if (fourCC === FOURCC_DXT1 || fourCC === FOURCC_DXT3 || fourCC === FOURCC_DXT5) {
+                    throw new Error("Compressed DDS formats (DXT1, DXT3, DXT5) are not supported by this parser.");
+                }
+
+                throw new Error("Unknown DDS FourCC format.");
+            }
+            
+            // Needs to be uncompressed RGB/RGBA format
+            if (!dwPixelFormatFlags & DDPF_RGB) {
+                throw new Error("Unsupported DDS pixel format. Only uncompressed RGB and RGBA formats are supported.");
+            }
+
+            // --- DIMENSION VALIDATION & RESIZING LOGIC ---
+            if (dwWidth !== dwHeight) {
+                throw new Error(`DDS cubemap faces must be square. The file's dimensions are ${dwWidth}x${dwHeight}.`);
+            }
+            
+            const isPowerOfTwo = (n) => (n & (n - 1)) === 0;
+
+            let resizedWidth = dwWidth;
+            let resizedHeight = dwHeight;
+
+            if (!isPowerOfTwo(dwWidth)) {
+
+                // Find the closest power of two that is less than or equal to the current dimension
+                resizedWidth = Math.pow(2, Math.floor(Math.log2(dwWidth)));
+                resizedHeight = resizedWidth; // Keep it square
+                console.warn(`Warning: Texture dimensions (${dwWidth}) are not a power of two. Resizing to ${resizedWidth}x${resizedHeight}.`);
+            }
+
+            const dwRGBBitCount = ddspf.getUint32(12, true);
+            const dwRBitMask = ddspf.getUint32(16, true);
+            const dwGBitMask = ddspf.getUint32(20, true);
+            const dwBBitMask = ddspf.getUint32(24, true);
+            const dwABitMask = ddspf.getUint32(28, true);
+            
+            let bytesPerPixel;
+            
+            if (dwRGBBitCount === 32) {
+                bytesPerPixel = 4;
+            } else if (dwRGBBitCount === 24) {
+                bytesPerPixel = 3;
+            } else {
+                throw new Error(`Unsupported bit count: ${dwRGBBitCount}. Only 24-bit and 32-bit uncompressed formats are supported.`);
+            }
+            
+            let pixelDataOffset = 128; // Header is 128 bytes long
+            let faceSize = dwWidth * dwHeight * bytesPerPixel;
+            let faces = [];
+            
+            const totalDataSize = faceSize * 6;
+            if (buffer.byteLength < pixelDataOffset + totalDataSize) {
+                throw new Error(`DDS file size mismatch. Expected at least ${pixelDataOffset + totalDataSize} bytes for data, but file size is only ${buffer.byteLength} bytes. This indicates a malformed or unsupported file.`);
+            }
+            
+            // Get shift amounts for each channel from the masks
+            const rShift = getShiftAmount(dwRBitMask);
+            const gShift = getShiftAmount(dwGBitMask);
+            const bShift = getShiftAmount(dwBBitMask);
+            const aShift = getShiftAmount(dwABitMask);
+
+            // Extract and reorder data for all 6 faces
+            for (let i = 0; i < 6; i++) {
+
+                const originalDataView = new DataView(buffer, pixelDataOffset + (i * faceSize), faceSize);
+                const originalFaceData = new Uint8Array(dwWidth * dwHeight * 4);
+                
+                for (let pixelIndex = 0; pixelIndex < dwWidth * dwHeight; pixelIndex++) {
+
+                    const originalPixelOffset = pixelIndex * bytesPerPixel;
+                    const outputPixelOffset = pixelIndex * 4;
+                    
+                    let pixelValue;
+                    if (bytesPerPixel === 4) {
+                        pixelValue = originalDataView.getUint32(originalPixelOffset, true);
+                    } else { // 24-bit
+                        pixelValue = (originalDataView.getUint8(originalPixelOffset + 2) << 16) |
+                                     (originalDataView.getUint8(originalPixelOffset + 1) << 8) |
+                                     originalDataView.getUint8(originalPixelOffset);
+                    }
+                    
+                    // Use the bitmasks to extract and reorder the channels
+                    originalFaceData[outputPixelOffset + 0] = (pixelValue & dwRBitMask) >>> rShift; // R
+                    originalFaceData[outputPixelOffset + 1] = (pixelValue & dwGBitMask) >>> gShift; // G
+                    originalFaceData[outputPixelOffset + 2] = (pixelValue & dwBBitMask) >>> bShift; // B
+                    originalFaceData[outputPixelOffset + 3] = (dwABitMask !== 0) ? ((pixelValue & dwABitMask) >>> aShift) : 255; // A
+                }
+
+                // If the image is not a power of two, resize it
+                let finalFaceData = originalFaceData;
+                if (resizedWidth !== dwWidth) {
+                    finalFaceData = resizeImageData(originalFaceData, dwWidth, dwHeight, resizedWidth, resizedHeight);
+                }
+
+                faces.push(finalFaceData);
+            }
+            
+            return {
+                width: resizedWidth,
+                height: resizedHeight,
+                faces: faces,
+                format: THREE.RGBAFormat 
+            };
+        }
+
+         /**
+         * Fetches and loads a DDS cubemap file from a given URL.
+         * @param {string} filename - The name of the DDS file to load.
+         */
+        async function loadCubemap(filename) {
+            showMessage(`Loading "${filename}"...`, 'info');
+            try {
+                const response = await fetch(filename);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const arrayBuffer = await response.arrayBuffer();
+                const ddsData = parseDDS(arrayBuffer);
+                
+                // Create an array of DataTexture objects, one for each face
+                const dataTextures = ddsData.faces.map(faceData => {
+                    const texture = new THREE.DataTexture(
+                        faceData, 
+                        ddsData.width, 
+                        ddsData.height, 
+                        ddsData.format,
+                        THREE.UnsignedByteType
+                    );
+                    // Explicitly set the color space to SRGB to ensure correct rendering.
+                    texture.colorSpace = THREE.SRGBColorSpace;
+                    texture.minFilter = THREE.LinearFilter;
+                    texture.magFilter = THREE.LinearFilter;
+                    texture.needsUpdate = true;
+                    return texture;
+                });
+                
+                // Pass the array of DataTexture objects directly to the CubeTexture constructor
+                const cubeTexture = new THREE.CubeTexture(dataTextures);
+                // Explicitly set the color space for the CubeTexture as well.
+                cubeTexture.colorSpace = THREE.SRGBColorSpace;
+                cubeTexture.mapping = THREE.CubeReflectionMapping;
+                cubeTexture.needsUpdate = true;
+                
+                // Apply the cubemap to the scene's background for an immersive 360-degree view
+                scene.background = cubeTexture;
+                
+                showMessage(`DDS cubemap loaded. You can now rotate the view.`, 'success');
+
+                // Automatically hide controls after a brief delay
+                setTimeout(() => {
+                    if (!controlsContainer.classList.contains('controls-hidden')) {
+                        toggleControls();
+                    }
+                }, 3000); // 3-second delay
+
+            } catch (error) {
+                showMessage(`Error loading file "${filename}": ${error.message}`, 'error');
+                // Revert to a simple background color on error
+                scene.background = new THREE.Color(0x1f2937);
+            }
+        }
+
+        // Add event listener to the dropdown to load the selected cubemap
+        cubemapSelect.addEventListener('change', (event) => {
+            const selectedFile = event.target.value;
+            loadCubemap(selectedFile);
+        });
+
+        // Start the application when the window loads
+        window.onload = init;
+
+    </script>
+
+</body>
+</html>

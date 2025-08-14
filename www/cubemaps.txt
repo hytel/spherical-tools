@@ -1,0 +1,2 @@
+First Cubemap=cubemaps/cubemap_test1.dds
+Second Cubemap=cubemaps/cubemap_test2.dds
