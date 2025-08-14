@@ -27,7 +27,9 @@ THE SOFTWARE.
 
 
 ------------------------------------------------------------------------------
-www/scripts/three.core.js, www/scripts/three.module.js, and www/OrbitControls.js license:
+www/scripts/three.core.js, 
+www/scripts/three.module.js, and 
+www/addons/controls/OrbitControls.js license:
 
 The MIT License
 
