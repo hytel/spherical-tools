@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>LPMainWindow</class>
+ <widget class="QMainWindow" name="LPMainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Little Planet Renderer</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="spherical.qrc">
+    <normaloff>:/app_icon/spherical_app_icon.png</normaloff>:/app_icon/spherical_app_icon.png</iconset>
+  </property>
+  <property name="autoFillBackground">
+   <bool>false</bool>
+  </property>
+  <property name="unifiedTitleAndToolBarOnMac">
+   <bool>true</bool>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="spacing">
+     <number>1</number>
+    </property>
+    <property name="leftMargin">
+     <number>3</number>
+    </property>
+    <property name="topMargin">
+     <number>3</number>
+    </property>
+    <property name="rightMargin">
+     <number>3</number>
+    </property>
+    <property name="bottomMargin">
+     <number>3</number>
+    </property>
+    <item>
+     <widget class="LPOpenGLWidget" name="m_openglWidget" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="focusPolicy">
+       <enum>Qt::FocusPolicy::StrongFocus</enum>
+      </property>
+      <property name="acceptDrops">
+       <bool>true</bool>
+      </property>
+      <property name="autoFillBackground">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="m_save_action"/>
+    <addaction name="separator"/>
+    <addaction name="m_settings_action"/>
+    <addaction name="separator"/>
+    <addaction name="m_quit_action"/>
+   </widget>
+   <widget class="QMenu" name="menuRecord">
+    <property name="title">
+     <string>Record</string>
+    </property>
+    <widget class="QMenu" name="menuFPS">
+     <property name="title">
+      <string>FPS</string>
+     </property>
+     <addaction name="m_fps_100"/>
+     <addaction name="m_fps_80"/>
+     <addaction name="m_fps_60"/>
+     <addaction name="m_fps_30"/>
+     <addaction name="m_fps_2997"/>
+     <addaction name="m_fps_24"/>
+     <addaction name="m_fps_20"/>
+     <addaction name="m_fps_15"/>
+     <addaction name="m_fps_10"/>
+    </widget>
+    <addaction name="m_record_start"/>
+    <addaction name="m_record_stop"/>
+    <addaction name="menuFPS"/>
+    <addaction name="m_azimuth_loop_action"/>
+   </widget>
+   <widget class="QMenu" name="menuSpeed">
+    <property name="title">
+     <string>Speed</string>
+    </property>
+    <addaction name="m_speed_20"/>
+    <addaction name="m_speed_10"/>
+    <addaction name="m_speed_05"/>
+    <addaction name="m_speed_25"/>
+    <addaction name="m_speed_01"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuSpeed"/>
+   <addaction name="menuRecord"/>
+  </widget>
+  <widget class="QStatusBar" name="m_status_bar">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+  </widget>
+  <action name="m_save_action">
+   <property name="text">
+    <string>Save...</string>
+   </property>
+  </action>
+  <action name="m_quit_action">
+   <property name="text">
+    <string>Quit</string>
+   </property>
+  </action>
+  <action name="m_record_start">
+   <property name="text">
+    <string>Start</string>
+   </property>
+  </action>
+  <action name="m_record_stop">
+   <property name="text">
+    <string>Stop</string>
+   </property>
+  </action>
+  <action name="m_speed_10">
+   <property name="text">
+    <string>1.0</string>
+   </property>
+  </action>
+  <action name="m_speed_05">
+   <property name="text">
+    <string>0.5</string>
+   </property>
+  </action>
+  <action name="m_speed_25">
+   <property name="text">
+    <string>0.25</string>
+   </property>
+  </action>
+  <action name="m_speed_01">
+   <property name="text">
+    <string>0.1</string>
+   </property>
+  </action>
+  <action name="m_speed_20">
+   <property name="text">
+    <string>2.0</string>
+   </property>
+  </action>
+  <action name="m_fps_60">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>60</string>
+   </property>
+  </action>
+  <action name="m_fps_30">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>30</string>
+   </property>
+  </action>
+  <action name="m_fps_15">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>15</string>
+   </property>
+  </action>
+  <action name="m_fps_10">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>10</string>
+   </property>
+  </action>
+  <action name="m_fps_80">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>80</string>
+   </property>
+  </action>
+  <action name="m_fps_100">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>100</string>
+   </property>
+  </action>
+  <action name="m_fps_20">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>20</string>
+   </property>
+  </action>
+  <action name="m_fps_24">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>24</string>
+   </property>
+  </action>
+  <action name="m_azimuth_loop_action">
+   <property name="text">
+    <string>Azmith Loop</string>
+   </property>
+  </action>
+  <action name="m_settings_action">
+   <property name="text">
+    <string>Change Settings...</string>
+   </property>
+  </action>
+  <action name="m_fps_2997">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>29.97</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>LPOpenGLWidget</class>
+   <extends>QWidget</extends>
+   <header>LPOpenGLWidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="spherical.qrc"/>
+ </resources>
+ <connections/>
+</ui>

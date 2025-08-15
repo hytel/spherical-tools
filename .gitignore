@@ -42,3 +42,10 @@
 
 # Ignore build folder for utility
 utility/build/
+SphericalQt/build/
+
+# Ignore Mac Files
+.DS_Store
+
+# Ignore vim swp files
+*.swp

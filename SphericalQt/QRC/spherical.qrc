@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/app_icon">
+        <file>spherical_app_icon.png</file>
+    </qresource>
+</RCC>
