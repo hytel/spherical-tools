@@ -62,7 +62,7 @@ You should see your cubemap come up.  it should look something like:
 
 You can use the mouse to spin the view around.  There is also a symbol in the bottom right of the page which will show the controls so you can pick a different cubemap from your selection in the cubemaps.txt file.  The controls do come up for a split second when the page is first loaded, but I have the HTML automatically select the first cubemap which causes the controls to slowly hide until the button is pressed.
 
-For video and still reframing, I wrote a Qt application called SphericalQt.  OpenCV is also required by the application for image processing.  It is located in the SphericalQt subfolder, and can be built by CMake as follows:
+For 360 degree spherical video and still image reframing, I wrote a Qt application called SphericalQt.  OpenCV is also required by the application for image processing.  It is located in the SphericalQt subfolder, and can be built by CMake as follows:
 
 ```
 cd SphericalQt
@@ -72,17 +72,17 @@ cmake ..
 make
 ```
 
-The application should be built to the SphericalQt folder.  On MacOS, it will be a SphericalQt.app folder (like a normal Mac Application), or just a SphericalQt binary on Linux.  It will load some LUT files during runtime either from the luts sub-folder, or a luts folder in the Resources folder for the app on MacOS.   The purpose of this application is to take equirectangular 360 image or mp4 stitched videos and create new reframed images or videos with user input.  It is a quirky app but quite powerful, and uses a non-standard approach.  You can drag-n-drop a 360 still or video onto the video frame that comes up.  It will look something like:
+The application should be built to the SphericalQt folder.  On MacOS, it will be a SphericalQt.app folder (like a normal Mac Application), or just a SphericalQt binary on Linux.  It will load some LUT files during runtime either from the luts sub-folder, or a duplicate copy of the luts folder in the Resources folder for the app on MacOS.   The purpose of this application is to take equirectangular 360 images or mp4 stitched videos and create new reframed images or videos with user input.  It is a quirky app but quite powerful, and uses a non-standard approach.  You can drag-n-drop a 360 still or video onto the viewer panel that comes up.  It will look something like:
 
 ![alt text](./docs/spherical_qt_main.jpg?raw=true "Spherical Qt Application")
 
-Using the mouse, you can reframe it by click dragging horizontally or vertically.  If it's a video, it will begin playing back immediately.  Many keys can control the application.  You can press the spacebar to toggle a video's playback.  Pressing the 'q' will quit the application.  The 'w' key will toggle writting out a reframed video.  By pressing the 's' key for settings, a panel will come up with many sliders that you can use to adjust the video and settings.  It looks like this:
+Using the mouse, you can reframe it by click dragging horizontally or vertically.  If it's a video, it will begin playing back immediately.  Many keys can control the application.  You can press the spacebar to toggle a video's playback.  Pressing the 'q' key will quit the application.  The 'w' key will toggle writting out a reframed video.  By pressing the 's' key for settings, a panel will come up with many sliders that you can use to adjust the video and settings.  It looks like this:
 
 ![alt text](./docs/spherical_qt_settings.jpg?raw=true "Spherical Qt Settings Panel")
 
 The final slider allows the user to advance and rewind the playback.  Although no audio is played back, during reframing writes, the audio is written.  Even though the playback isn't realtime, the written file will playback at normal speed, with correct audio as well.  The user can even change the settings and the view reframe while Spherical Qt is writing out the video.  A short summary of some of the keys available in the viewer window are:
 
-'''
+```
 Spacebar   - Toggle play/pause
 1          - Animate heading
 2          - Animate pitch
@@ -93,6 +93,6 @@ n          - Single frame advance on pause
 q          - Quit application
 s          - Show settings panel
 arrow keys - horizontal/vertical reframing
-'''
+```
 
 Enjoy!
