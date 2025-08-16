@@ -22,9 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 -----------------------------------------------------------------------------*/
 
+#ifdef __linux
+#define GL_GLEXT_PROTOTYPES
+#endif
+
 // Qt includes
 #include <QOpenGLFunctions>
 #include <QOpenGLFunctions_4_5_Compatibility>
+
+#ifdef __linux
+#include "GL/glext.h"
+#endif
 
 // OpenCV includes
 #include <opencv2/highgui.hpp>
@@ -198,14 +206,21 @@ LPOpenGLWidget::LPOpenGLWidget(QWidget *parent) :
     m_transformMat.setToIdentity();
 
     QSurfaceFormat format;
+
     format.setRenderableType(QSurfaceFormat::OpenGL);
     format.setDepthBufferSize(24);
     format.setStencilBufferSize(8);
+
+    format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+
+    // Setup to use version OpenGL 4.3
     format.setMajorVersion(4);
     format.setMinorVersion(3);
     format.setVersion(4, 3);
     //format.setVersion(4, 4);
-    format.setOption(QSurfaceFormat::DebugContext, true);
+    //
+    //
+    format.setOption(QSurfaceFormat::DebugContext, false);
     format.setOption(QSurfaceFormat::DeprecatedFunctions, true);
     format.setProfile(QSurfaceFormat::CompatibilityProfile);
     setFormat(format); // must be called before the widget or its parent window gets shown
@@ -512,14 +527,26 @@ const QString &LPOpenGLWidget::getCurrentFilterString(void) const {
 void LPOpenGLWidget::paintGL(void) {
 
     if (!parent())
-        printf("Save: Paint\n");
+        printf("Offscreen Render\n");
 
     advanceFrame();
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    if (!m_file_changed && m_img.isNull()) {
 
-    if (!m_file_changed && m_img.isNull())
+	// No media, just clear screen
+        glDisable(GL_DEPTH_TEST);
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(0, width(),0, height(), -1.0, 1.0); // left,right bottom,top near/far
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+	glFlush();
+
         return;
+    }
 
     if (m_last_frame.empty() ||
         m_last_frame.cols != width() ||
@@ -530,9 +557,6 @@ void LPOpenGLWidget::paintGL(void) {
 
     m_aspect = (float)height() / (float)width();
 
-    if (!parent())
-        printf("Save: Aspect\n");
-
     if (m_file_changed) {
 
         if (m_frame_texture && m_frame_texture->isCreated()) {
@@ -541,6 +565,7 @@ void LPOpenGLWidget::paintGL(void) {
 
         // Load image from path if requested
         if (m_source == Image && !m_img.load(m_filename)) {
+
             //loads correctly
             qWarning("ERROR LOADING IMAGE");
         }
@@ -555,15 +580,9 @@ void LPOpenGLWidget::paintGL(void) {
         if (!m_frame_texture->create()) {
             qWarning("ERROR Creating Frame Texture");
         }
-        else {
-            // qInfo("Frame Texture created!");
-        }
 
         m_file_changed = false;
     }
-
-    if (!m_frame_texture)
-        return;
 
     glDisable(GL_DEPTH_TEST);
     glMatrixMode(GL_PROJECTION);
@@ -574,6 +593,10 @@ void LPOpenGLWidget::paintGL(void) {
     glEnable(GL_TEXTURE_2D);
     glDisable(GL_CULL_FACE);
 
+    if (!m_frame_texture) {
+        glFlush();
+        return;
+    }
 
     glActiveTexture(GL_TEXTURE0);
     m_frame_texture->bind();
@@ -607,29 +630,23 @@ void LPOpenGLWidget::paintGL(void) {
     dimension_vec.setX(width());
     dimension_vec.setY(height());
 
-    GLenum error = glGetError();
-
     m_shader_program.enableAttributeArray(m_vertexLocation);
     m_shader_program.enableAttributeArray(m_tcoordsLocation);
 
     m_shader_program.setAttributeArray(m_vertexLocation, quadVertices, 3);
-    error = glGetError();
+
     m_shader_program.setAttributeArray(m_tcoordsLocation, quadTCoords, 2);
-    error = glGetError();
 
     m_shader_program.bind();
-    error = glGetError();
 
     QSurfaceFormat sf = QOpenGLContext::currentContext()->format();
     QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions(); //<QOpenGLFunctions_4_5_Compatibility>();
     f->initializeOpenGLFunctions();
     //f->glUniformMatrix4fv(matrixLocation, 1, GL_FALSE, pmvMatrix.data());
     glUniformMatrix4fv(matrixLocation, 1, GL_FALSE, pmvMatrix.data());
-    error = glGetError();
 
     m_shader_program.setUniformValue(matrixLocation, pmvMatrix);
     //m_shader_program.setUniformValueArray(matrixLocation, &pmvMatrix, 1);
-    error = glGetError();
     //const GLubyte *g = gluErrorString(error);
 
     m_shader_program.setUniformValue("dimension_vec", dimension_vec);
@@ -643,13 +660,9 @@ void LPOpenGLWidget::paintGL(void) {
     m_shader_program.setUniformValue("filter_strength", m_filter_strength);
     m_shader_program.setUniformValue("aspect", m_aspect);
 
-        error = glGetError();
-
     m_shader_program.setUniformValue("transform", m_transformMat);
     m_shader_program.setUniformValue("tex", 0);
     m_shader_program.setUniformValue("lut", 1);
-
-    error = glGetError();
 
     float shift_x = (1.0f / width()) * (m_shift_x * width() * 1.5);
     m_shader_program.setUniformValue("shift_x", shift_x);
@@ -699,10 +712,9 @@ void LPOpenGLWidget::paintGL(void) {
         }
     }
 
-    glEnd();
-
+    GLenum error = glGetError();
     if (error != GL_NO_ERROR) {
-       qWarning("ERROR Creating Texture: %d\n", (int)error);
+       qWarning("ERROR detected after OpenGL Frame draw: %d\n", (int)error);
     }
 }
 

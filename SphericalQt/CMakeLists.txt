@@ -129,7 +129,6 @@ target_include_directories(${PROJECT_NAME}
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/UI
         ${OpenCV_INCLUDE_DIRS}
-        ${GLU_INCLUDE_DIR}
 )
 
 # Platform-specific tweaks
