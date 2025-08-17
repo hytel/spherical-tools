@@ -20,7 +20,9 @@ make
 
 If you place the source DNG file in the utility/build folder, you can run the newly compiled utility (should be in the utility folder):
 
+```
 ./image_to_cubemap ./cubemap_one.dng
+```
 
 This will create a cubemap_one.png and cubemap_one.dds in the same folder as the source DNG file.  The output of the utility may look something like:
 
@@ -46,9 +48,12 @@ You should now have a cubemap_one.png that looks something like this:
 
 ![alt text](docs/cubemap_png.jpg?raw=true "Converted Cubemap PNG")
 
-This is the "unfolded" image which looks essentially like you would imagine: six images for each side of an unfolded cube.  The unfolded format can be used by some applications directly, but it also is useful as a format that you can edit before finally converting it to a DDS file for use in a runtime environment.  If you do edit the unfolded cubemap image, image_to_cubemap can also convert the edited unfolded cubemap image directly into a DDS file with the -u option:
+This is the "unfolded" image which looks essentially like you would imagine: six images for each side of an unfolded cube.  The unfolded image format can be used by some applications directly, but it is also a format that you can easily edit before finally converting it to a DDS file for use in a runtime environment.  If you do edit the unfolded cubemap image, the image_to_cubemap utility application can also convert the edited unfolded cubemap image directly into a DDS file using the -u option:
 
+
+```
 ./image_to_cubemap -u ./cubemap_one_editted.png
+```
 
 When using the image_to_cubemap utility with the -u flag, the source image is expected to be an unfolded cubemap image, not an equirectangular stitched photo.  The only output is then a DDS runtime cubemap file with the same file path/prefix.  Here's what the edited unfolded image without the photographer might looks like:
 
@@ -56,11 +61,15 @@ When using the image_to_cubemap utility with the -u flag, the source image is ex
 
 The DDS file is harder to see directly (gimp will load it) and is more like a stack of six layers in image editors.  To see a DDS cubemap in the browser, edit the cubemaps.txt file in the "www" folder and add an entry like:
 
+```
 My First Cubemap=cubemaps/cubemap_one.dds
+```
 
 Then put the cubemap_one.dds from the utility/build folder in the www/cubemaps folder.  You can start a test server using the 'start_http_server' script in the 'www' folder.  Then point your browser at:
 
+```
 http://localhost:8080/index.html
+```
 
 You should see your cubemap come up.  it should look something like:
 
