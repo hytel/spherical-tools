@@ -49,6 +49,13 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui)
 # Add executable for Qt C++ application image_to_cubemap
 qt_add_executable(image_to_cubemap image_to_cubemap.cpp)
 
+# 
+# Binary build should be in project's folder with CMakeLists.txt
+# 
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
+
 # Link to libraw
 target_link_libraries(image_to_cubemap PRIVATE ${LIBRAW_LIBRARIES})
 

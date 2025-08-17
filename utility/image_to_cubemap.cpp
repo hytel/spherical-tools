@@ -312,15 +312,38 @@ void convertEquirectToCubemap(const QImage& image_in, QImage& image_out) {
 // 
 int main(int argc, char** argv) {
 
+    bool unfolded = false;
+    QString input_image_path;
+
     // Make sure user provided an input image, and nothing more for now
     if (argc < 2) {
-        std::cout << "Usage: ./image_to_cubemap <input_image>" << std::endl;
+        std::cout << "Usage: ./image_to_cubemap [-u|--unfolded] <input_image_path>" << std::endl;
         return 1;
     }
 
+    int argIndex = 1;
+
+    // Check for optional argument
+    if (std::string(argv[argIndex]) == "-u" || std::string(argv[argIndex]) == "--unfolded") {
+        unfolded = true;
+        ++argIndex;
+    }
+
+    // Now expect the image file path
+    if (argIndex < argc) {
+        input_image_path = QString::fromStdString(argv[argIndex]);
+    } else {
+        std::cerr << "Error: missing required argument: <input_image_path>\n";
+        return 1;
+    }
+
+    // Done parsing, now use the values
+    std::cout << "Unfolded option: " << (unfolded ? "true" : "false") << "\n";
+    std::cout << "Filename: " << input_image_path.toStdString() << "\n";
+
+
     // Get the user's image path
-    QString input_path = argv[1];
-    QFileInfo file_info(input_path);
+    QFileInfo file_info(input_image_path);
 
     // Compute the input file's extension
     QString extension = file_info.suffix().toLower();
@@ -343,31 +366,39 @@ int main(int argc, char** argv) {
     // Are we reading raw?
     if (extension == "dng")
         // Yes, load the raw DNG equirectangular image
-        image_in = loadDNG(input_path);
+        image_in = loadDNG(input_image_path);
     else {
 
         // No, load the raw PNG/JPG file
-        if (!image_in.load(input_path)) {
-            std::cerr << "Failed to load image: " << input_path.toStdString() << std::endl;
+        if (!image_in.load(input_image_path)) {
+            std::cerr << "Failed to load image: " << input_image_path.toStdString() << std::endl;
             return 1;
         }
     }
 
-    // Create a black image to fill as cubemap
-    int outHeight = image_in.width() * 3 / 4;
-    QImage image_out(image_in.width(), outHeight, QImage::Format_RGB32);
-    image_out.fill(Qt::black);
+    QImage image_unfolded;
 
-    // Fill the cubemap image using the equirectangular image 
-    convertEquirectToCubemap(image_in, image_out);
-
-    // Save the cubemap first as a PNG
-    std::cout << "Saving Cubemap to PNG: " << output_png.toStdString() << std::endl;
-    image_out.save(output_png);
-    std::cout << "Saved Cubemap to PNG: " << output_png.toStdString() << std::endl;
+    if (unfolded) {
+        // Source is assumed to be unfolded already, so just assign it
+        image_unfolded = image_in;
+    }
+    else {
+        // Create a black image to fill as unfolded cubemap
+        int outHeight = image_in.width() * 3 / 4;
+        QImage image_out(image_in.width(), outHeight, QImage::Format_RGB32);
+        image_out.fill(Qt::black);
+    
+        // Fill the cubemap image using the equirectangular image 
+        convertEquirectToCubemap(image_in, image_unfolded);
+    
+        // Save the cubemap first as a PNG
+        std::cout << "Saving Cubemap to PNG: " << output_png.toStdString() << std::endl;
+        image_unfolded.save(output_png);
+        std::cout << "Saved Cubemap to PNG: " << output_png.toStdString() << std::endl;
+    }
 
     // Then save image as a DDS
-    writeCubemapToDDS(image_out.rgbSwapped(), output_dds);
+    writeCubemapToDDS(image_unfolded.rgbSwapped(), output_dds);
     std::cout << "Saved Cubemap to DDS: " << output_dds.toStdString() << std::endl;
 
     // Done!

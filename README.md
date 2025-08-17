@@ -2,7 +2,7 @@
 
 This small repos contains utilities and web related files that I have created for processing and sharing my 360 degree still and video imagery on the web.  Feel free to make comments and suggestions on this repo, but the main reason I'm putting this out there is because others may find this small growing collection useful.  I currently have many ongoing projects and may take some time to get back to you.
 
-The "utility" folder contains the "image_to_cubemap" C++ code which can turn an equirectangular DNG or JPG image from spherical cameras (e.g., an Insta360 X5) and produce a .DDS cubemap image in the same folder (as well as a PNG).  The cubemap files can then be displayed on the web using the files in the "www" subfolder.  Many games can also load DDS cubemaps as skyboxes.  Change the contents of the "cubemaps.txt" file in the 'www' folder to specify what to name each cubemap, and where the converted DDS files are stored so they can be loaded in your browser's page.  This is done mostly via Javascript using three.js and some custom DDS loading code as well as tailwind for CSS stylization.
+The "utility" folder contains the "image_to_cubemap" C++ code which can turn an equirectangular DNG or JPG image from spherical cameras (e.g., an Insta360 X5) and produce a .DDS cubemap image in the same folder (as well as a PNG).  The cubemap files can then be displayed on the web using the files in the "www" subfolder.  Many games can also load DDS cubemaps as skyboxes.  Change the contents of the "cubemaps.txt" file in the 'www' folder to specify what to name each cubemap, and where the converted DDS files are stored so they can be loaded in your browser's page.  This is done mostly via Javascript using three.js and some custom DDS (Direct Draw Surface) loading code as well as tailwind for CSS stylization.
 
 Here's a quick example.  If you have a raw equirectangular image as a cubemap_one.dng from your spherical camera like:
 
@@ -18,11 +18,9 @@ cmake ..
 make
 ```
 
-If you place the source DNG file in the utility/build folder, you can run the newly compiled utility (in utility/build):
-
+If you place the source DNG file in the utility/build folder, you can run the newly compiled utility (should be in the utility folder):
 
 ./image_to_cubemap ./cubemap_one.dng
-
 
 This will create a cubemap_one.png and cubemap_one.dds in the same folder as the source DNG file.  The output of the utility may look something like:
 
@@ -48,7 +46,15 @@ You should now have a cubemap_one.png that looks something like this:
 
 ![alt text](docs/cubemap_png.jpg?raw=true "Converted Cubemap PNG")
 
-The DDS file is harder to see directly (gimp will load it) and is more like a stack of six layers in image editors.   To see this cubemap in the browser, edit the cubemaps.txt file in the "www" folder and add an entry like:
+This is the "unfolded" image which looks essentially like you would imagine: six images for each side of an unfolded cube.  The unfolded format can be used by some applications directly, but it also is useful as a format that you can edit in before reformatting as a DDS file for runtime.  If you do edit the unfolded cubemap image, image_to_cubemap can also convert the edited unfolded cubemap image directly into a DDS file with the -u option:
+
+./image_to_cubemap -u ./cubemap_one_editted.png
+
+When using the utility with the -u flag, the source image is expected to be an unfolded cubemap image, not an equirectangular stitched photo.  The only output is then a DDS runtime cubemap file with the same path/prefix.  Here's what the edited unfolded image without the photographer looks like:
+
+![alt text](docs/cubemap_edited.jpg?raw=true "Edited unfolded cubemap image")
+
+The DDS file is harder to see directly (gimp will load it) and is more like a stack of six layers in image editors.  To see a DDS cubemap in the browser, edit the cubemaps.txt file in the "www" folder and add an entry like:
 
 My First Cubemap=cubemaps/cubemap_one.dds
 
