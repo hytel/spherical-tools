@@ -1,1 +1,7 @@
 vertical_fov=65
+box_size=100
+starting_z=1.1
+enable_zoom=true
+zoom_speed=2.0
+enable_pan=true
+pan_speed=2.0

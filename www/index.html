@@ -138,12 +138,50 @@
         const toggleIconOn = document.getElementById('toggle-icon-on');
         const toggleIconOff = document.getElementById('toggle-icon-off');
         let cameraVerticalFOV = 65;
+        let boxSize = 100;
+        let startingZ = 1.1;
+        let enablePan= true;
+        let panSpeed = 2.0;
+        let enableZoom = true;
+        let zoomSpeed = 2.0;
 
-        // If the settings mentions the vertical FOV, use it
+        // If the settings mentions the vertical_fov , use it
         if (Object.hasOwn(SETTINGS, "vertical_fov")) {
-           cameraVerticalFOV = parseInt(SETTINGS["vertical_fov"]);
+           cameraVerticalFOV = parseFloat(SETTINGS["vertical_fov"]);
+        }
+
+        // If the settings mentions the box_size, use it
+        if (Object.hasOwn(SETTINGS, "box_size")) {
+           boxSize = parseFloat(SETTINGS["box_size"]);
+        }
+
+        // If the settings mentions the starting_z, use it
+        if (Object.hasOwn(SETTINGS, "starting_z")) {
+           startingZ = parseFloat(SETTINGS["starting_z"]);
+        }
+
+        // If the settings mentions the enable_zoom, use it
+        if (Object.hasOwn(SETTINGS, "enable_zoom")) {
+           let z_str = String(SETTINGS["enable_zoom"]).toLowerCase();
+           enableZoom = ((z_str == 't' || z_str == 'true' || z_str == 'y' || z_str == 'yes'));
+        }
+
+        // If the settings mentions the zoom_speed, use it
+        if (Object.hasOwn(SETTINGS, "zoom_speed")) {
+           zoomSpeed = parseFloat(SETTINGS["zoom_speed"]);
+        }
+
+        // If the settings mentions the enable_pan, use it
+        if (Object.hasOwn(SETTINGS, "enable_pan")) {
+           let p_str = String(SETTINGS["enable_pan"]).toLowerCase();
+           enablePan = ((p_str == 't' || p_str == 'true' || p_str == 'y' || p_str == 'yes'));
         }
  
+        // If the settings mentions the pan_speed, use it
+        if (Object.hasOwn(SETTINGS, "pan_speed")) {
+           panSpeed = parseFloat(SETTINGS["pan_speed"]);
+        }
+
         // Initializes the Three.js scene, camera, renderer, and controls.
         function init() {
 
@@ -152,8 +190,8 @@
             scene.background = new THREE.Color(0x1f2937); // Dark gray background
 
             // Camera
-            camera = new THREE.PerspectiveCamera(cameraVerticalFOV, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.z = 2;
+            camera = new THREE.PerspectiveCamera(cameraVerticalFOV, window.innerWidth / window.innerHeight, 0.1, boxSize * 2);
+            camera.position.z = startingZ;
 
             // Renderer
             renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
@@ -163,10 +201,13 @@
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true; // gives a more fluid feeling to the rotation
             controls.dampingFactor = 0.05;
-            controls.screenSpacePanning = false;
-            controls.minDistance = 0; // Allow moving close to the center
-            controls.maxDistance = 1; // Limit movement to stay inside the cubemap
-            controls.enableZoom = false; // Disable zooming to better simulate a static environment
+            controls.screenSpacePanning = true;//enablePan;
+            controls.enablePan = enablePan;
+            controls.panSpeed = panSpeed;
+            controls.minDistance = 1; // Allow moving close to the center
+            controls.maxDistance = boxSize; // Limit movement to stay inside the cubemap
+            controls.enableZoom = enableZoom; // Enable/Disable zooming to better simulate a static environment
+            controls.zoomSpeed = zoomSpeed;
 
             // Handle window resizing
             window.addEventListener('resize', onWindowResize, false);
@@ -446,7 +487,9 @@
          * @param {string} filename - The name of the DDS file to load.
          */
         async function loadCubemap(filename) {
+
             showMessage(`Loading "${filename}"...`, 'info');
+
             try {
                 const response = await fetch(filename);
                 if (!response.ok) {
@@ -465,6 +508,7 @@
                         THREE.UnsignedByteType
                     );
                     // Explicitly set the color space to SRGB to ensure correct rendering.
+                    texture.flipY = true; // Using BoxGeometry we do need to flip vertically
                     texture.colorSpace = THREE.SRGBColorSpace;
                     texture.minFilter = THREE.LinearFilter;
                     texture.magFilter = THREE.LinearFilter;
@@ -472,8 +516,24 @@
                     return texture;
                 });
                 
+                // Create a skybox mesh
+                const materialArray = [
+                  new THREE.MeshBasicMaterial({ map: dataTextures[0], side: THREE.BackSide }),
+                  new THREE.MeshBasicMaterial({ map: dataTextures[1], side: THREE.BackSide }),
+                  new THREE.MeshBasicMaterial({ map: dataTextures[2], side: THREE.BackSide }),
+                  new THREE.MeshBasicMaterial({ map: dataTextures[3], side: THREE.BackSide }),
+                  new THREE.MeshBasicMaterial({ map: dataTextures[4], side: THREE.BackSide }),
+                  new THREE.MeshBasicMaterial({ map: dataTextures[5], side: THREE.BackSide })
+                ];
+                
+                const skyboxGeo = new THREE.BoxGeometry(boxSize, boxSize, boxSize); // make this bigger to look further
+                const skybox = new THREE.Mesh(skyboxGeo, materialArray);
+                scene.add(skybox);
+
+/*
                 // Pass the array of DataTexture objects directly to the CubeTexture constructor
                 const cubeTexture = new THREE.CubeTexture(dataTextures);
+
                 // Explicitly set the color space for the CubeTexture as well.
                 cubeTexture.colorSpace = THREE.SRGBColorSpace;
                 cubeTexture.mapping = THREE.CubeReflectionMapping;
@@ -481,6 +541,7 @@
                 
                 // Apply the cubemap to the scene's background for an immersive 360-degree view
                 scene.background = cubeTexture;
+*/
                 
                 showMessage(`DDS cubemap loaded. You can now rotate the view.`, 'success');
 
