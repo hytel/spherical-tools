@@ -101,8 +101,9 @@
         THE SOFTWARE.
         -----------------------------------------------------------------------------*/
 
-        // Synchronously load the list of cubmap names at DDS data file paths from provided URL
-        function loadCubemapsSync(url) {
+        // Synchronously load config file dictionary
+        function loadConfigSync(url) {
+
             const xhr = new XMLHttpRequest();
             xhr.open("GET", url, false); // false = synchronous
             xhr.send(null);
@@ -124,9 +125,9 @@
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        const CUBEMAPS = loadCubemapsSync("cubemaps.txt");
+        const CUBEMAPS = loadConfigSync("cubemaps.txt");
 
-        const SETTINGS = loadCubemapsSync("settings.txt");
+        const SETTINGS = loadConfigSync("settings.txt");
 
         // --- Scene Setup ---
         let scene, camera, renderer, controls;
@@ -137,22 +138,45 @@
         const toggleControlsBtn = document.getElementById('toggle-controls-btn');
         const toggleIconOn = document.getElementById('toggle-icon-on');
         const toggleIconOff = document.getElementById('toggle-icon-off');
-        let cameraVerticalFOV = 65;
-        let boxSize = 100;
-        let startingZ = 1.1;
-        let enablePan= true;
-        let panSpeed = 2.0;
+
+        // Settings defaults
+        let cameraVFOV = 65;
+        let boxSize    = 100.0;
+        let startingX  = 0.0;
+        let startingY  = 0.0;
+        let startingZ  = 0.0;
+        let targetX    = 0.0;
+        let targetY    = 1.0;
+        let targetZ    = 0.0;
+        let enablePan  = true;
+        let panSpeed   = 2.0;
         let enableZoom = true;
-        let zoomSpeed = 2.0;
+        let zoomSpeed  = 2.0;
+
+        // Vertical FOV
 
         // If the settings mentions the vertical_fov , use it
         if (Object.hasOwn(SETTINGS, "vertical_fov")) {
-           cameraVerticalFOV = parseFloat(SETTINGS["vertical_fov"]);
+           cameraVFOV = parseFloat(SETTINGS["vertical_fov"]);
         }
+
+        // Box size in scene units
 
         // If the settings mentions the box_size, use it
         if (Object.hasOwn(SETTINGS, "box_size")) {
            boxSize = parseFloat(SETTINGS["box_size"]);
+        }
+
+        // Position X/Y/Z
+
+        // If the settings mentions the starting_x, use it
+        if (Object.hasOwn(SETTINGS, "starting_x")) {
+           startingX = parseFloat(SETTINGS["starting_x"]);
+        }
+
+        // If the settings mentions the starting_y, use it
+        if (Object.hasOwn(SETTINGS, "starting_y")) {
+           startingY = parseFloat(SETTINGS["starting_y"]);
         }
 
         // If the settings mentions the starting_z, use it
@@ -160,16 +184,39 @@
            startingZ = parseFloat(SETTINGS["starting_z"]);
         }
 
+        // Target X/Y/Z
+
+        // If the settings mentions the target_x, use it
+        if (Object.hasOwn(SETTINGS, "target_x")) {
+           targetX = parseFloat(SETTINGS["target_x"]);
+        }
+
+        // If the settings mentions the target_y, use it
+        if (Object.hasOwn(SETTINGS, "target_y")) {
+           targetY = parseFloat(SETTINGS["target_y"]);
+        }
+
+        // If the settings mentions the target_z, use it
+        if (Object.hasOwn(SETTINGS, "target_z")) {
+           targetZ = parseFloat(SETTINGS["target_z"]);
+        }
+
+        // Enable Zoom
+
         // If the settings mentions the enable_zoom, use it
         if (Object.hasOwn(SETTINGS, "enable_zoom")) {
            let z_str = String(SETTINGS["enable_zoom"]).toLowerCase();
            enableZoom = ((z_str == 't' || z_str == 'true' || z_str == 'y' || z_str == 'yes'));
         }
 
+        // Zoom Speed 
+
         // If the settings mentions the zoom_speed, use it
         if (Object.hasOwn(SETTINGS, "zoom_speed")) {
            zoomSpeed = parseFloat(SETTINGS["zoom_speed"]);
         }
+
+        // Enable Pan
 
         // If the settings mentions the enable_pan, use it
         if (Object.hasOwn(SETTINGS, "enable_pan")) {
@@ -177,6 +224,8 @@
            enablePan = ((p_str == 't' || p_str == 'true' || p_str == 'y' || p_str == 'yes'));
         }
  
+        // Pan Speed
+
         // If the settings mentions the pan_speed, use it
         if (Object.hasOwn(SETTINGS, "pan_speed")) {
            panSpeed = parseFloat(SETTINGS["pan_speed"]);
@@ -190,7 +239,11 @@
             scene.background = new THREE.Color(0x1f2937); // Dark gray background
 
             // Camera
-            camera = new THREE.PerspectiveCamera(cameraVerticalFOV, window.innerWidth / window.innerHeight, 0.1, boxSize * 2);
+            camera = new THREE.PerspectiveCamera(cameraVFOV, window.innerWidth / window.innerHeight, 0.1, boxSize * 2);
+ 
+            // Camera position
+            camera.position.x = startingX;
+            camera.position.y = startingY;
             camera.position.z = startingZ;
 
             // Renderer
@@ -209,8 +262,28 @@
             controls.enableZoom = enableZoom; // Enable/Disable zooming to better simulate a static environment
             controls.zoomSpeed = zoomSpeed;
 
+            // Camera target
+            controls.target.x = targetX;
+            controls.target.y = targetY;
+            controls.target.z = targetZ;
+
             // Handle window resizing
             window.addEventListener('resize', onWindowResize, false);
+
+            // Key listener for 'r'
+            window.addEventListener('keydown', (event) => {
+                 if (event.key === 'r' || event.key === 'R') {
+                   controls.reset();  // Reset camera to original state
+
+                   camera.position.x = startingX;
+                   camera.position.y = startingY;
+                   camera.position.z = startingZ;
+
+                   controls.target.x = targetX;
+                   controls.target.y = targetY;
+                   controls.target.z = targetZ;
+                 }
+            });
 
             // Populate the dropdown with the predefined cubemaps
             populateCubemapDropdown();

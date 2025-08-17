@@ -75,13 +75,18 @@ You should see your cubemap come up.  it should look something like:
 
 ![alt text](docs/cubemap_web.jpg?raw=true "Cubemap DDS Web Viewer")
 
-You can use the left-mouse to spin the view around.  There is also a symbol in the bottom right of the page which will show the controls so you can pick a different cubemap from your selection in the cubemaps.txt file.  The controls do come up for a split second when the page is first loaded, but I have the HTML automatically select the first cubemap which causes the controls to slowly hide until the button is pressed.  There is also a settings.txt file that is loaded at the start.  A growing list of parameters are now accepted to let the user choose which capabilities and settings are available in the viewer:
+You can use the left-mouse to spin the view around.  At any time, you can click the 'r' key to reset the view to the original position and rotation.  There is also a symbol in the bottom right of the page which will show the controls so you can pick a different cubemap from your selection in the cubemaps.txt file.  The controls do come up for a split second when the page is first loaded, but I have the HTML automatically select the first cubemap which causes the controls to slowly hide until the button is pressed.  There is also a settings.txt file that is loaded at the start.  A growing list of parameters are now accepted to let the user choose which capabilities and settings are available in the viewer:
 
 
 ```
 "vertical_fov" - How wide the camera field-of-view should be vertically in degrees.
 "box_size"     - How big the sky box is in scene units
-"starting_z"   - How high up in scene units should the viewer start at
+"starting_x"   - Camera starting scene position X
+"starting_y"   - Camera starting scene position Y
+"starting_z"   - Camera starting scene position Z
+"target_x"     - Camera target scene location X
+"target_y"     - Camera target scene location Y
+"target_z"     - Camera target scene location Z
 "enable_zoom"  - Should the scroll wheel control zooming
 "zoom_speed"   - How fast in scene units should the scroll wheel zoom in/out of the scene
 "enable_pan"   - Should the right-click drag control screen space panning

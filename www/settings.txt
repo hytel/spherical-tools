@@ -1,7 +1,23 @@
+# Vertical FOV in degrees
 vertical_fov=65
+
+# Skybox Size in scene units
 box_size=100
-starting_z=1.1
+
+# Where the camera is positioned
+starting_x=0
+starting_y=0
+starting_z=0
+
+# Where the camera is looking at
+target_x=0
+target_y=0
+target_z=1
+
+# Should zoom be enabled with scroll wheel, and how fast should zooming be
 enable_zoom=true
 zoom_speed=2.0
+
+# Should pan be enabled with the right mouse button and how fast should panning be
 enable_pan=true
 pan_speed=2.0
