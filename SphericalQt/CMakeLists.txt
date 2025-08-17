@@ -47,10 +47,16 @@ elseif(UNIX)
     add_compile_options(-Wno-deprecated-declarations)
 endif()
 
-set(CMAKE_AUTOMOC ON) # Enable automatic MOC processing for Qt
-set(CMAKE_AUTORCC ON) # Enable automatic RCC processing for Qt resources
-set(CMAKE_AUTOUIC ON) # Enable automatic UIC processing for Qt UI files
+# Enable automatic MOC processing for Qt
+set(CMAKE_AUTOMOC ON) 
 
+# Enable automatic RCC processing for Qt resources
+set(CMAKE_AUTORCC ON) 
+
+# Enable automatic UIC processing for Qt UI files
+set(CMAKE_AUTOUIC ON) 
+
+# Search in the UI path if user interfaces are referenced in Qt C++ code
 set(CMAKE_AUTOUIC_SEARCH_PATHS
     ${CMAKE_SOURCE_DIR}/UI
 )
@@ -81,35 +87,47 @@ set(FFMPEG_LIBS
     ${SWRESAMPLE_LIB}
 )
 
+#
 # Collect C++ source files from "source" directory
+#
 file(GLOB_RECURSE SOURCE_FILES
     "${CMAKE_SOURCE_DIR}/source/*.cpp"
     "${CMAKE_SOURCE_DIR}/include/*.h"
 )
 
+#
 # Collect UI files from "UI" directory
+#
 file(GLOB_RECURSE UI_FILES
     "${CMAKE_SOURCE_DIR}/UI/*.ui"
 )
 
+#
 # Collect QRC files from "QRC" directory
+#
 file(GLOB_RECURSE QRC_FILES
     "${CMAKE_SOURCE_DIR}/QRC/*.qrc"
 )
 
+#
 # Create the executable
+#
 add_executable(${PROJECT_NAME}
     ${SOURCE_FILES}
     ${UI_FILES}
     ${QRC_FILES}
 )
 
+#
 # Binary build should be in project's folder with CMakeLists.txt
+#
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 
+#
 # Link against Qt
+#
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         Qt6::Core
@@ -131,7 +149,9 @@ target_include_directories(${PROJECT_NAME}
         ${OpenCV_INCLUDE_DIRS}
 )
 
+#
 # Platform-specific tweaks
+#
 if(APPLE)
     # macOS bundle
     set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -140,7 +160,9 @@ if(APPLE)
         MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
     )
+
 elseif(WIN32)
+
     # Windows: set console off if you want a GUI app
     set_target_properties(${PROJECT_NAME} PROPERTIES
         WIN32_EXECUTABLE TRUE
@@ -149,7 +171,8 @@ endif()
 
 #
 # Copy luts to the Resources folder if an app was created on MacOS
-if(APPLE)
+#
+if (APPLE)
     set(RESOURCES_DIR "${CMAKE_BINARY_DIR}/luts")
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory

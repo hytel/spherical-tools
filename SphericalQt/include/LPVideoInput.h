@@ -32,12 +32,6 @@ THE SOFTWARE.
 // OpenCV includes
 #include <opencv2/core.hpp> // Basic OpenCV structures (cv::Mat)
 
-#ifdef USE_OPENCV
-#include <opencv2/videoio.hpp>  // Video write
-#include <opencv2/imgproc.hpp>
-
-#else
-
 // FFMPEG includes
 extern "C" {
 #include <libavformat/avformat.h>   // AVFormatContext, avformat_open_input, etc.
@@ -48,8 +42,6 @@ extern "C" {
 #include <libswscale/swscale.h>     // for image scaling (optional if converting to RGB)
 }
 
-#endif
-
 // Forward declaration
 class LPVideoOutput;
 
@@ -58,13 +50,6 @@ class LPVideoInput {
 public:
 
     LPVideoInput();
-
-#ifdef USE_OPENCV
-    inline cv::Mat &getCurrentFrame(void) {
-        return m_current_frame;
-    }
-#else
-#endif
 
     inline bool isRecording(void) const {
         return m_is_recording;
@@ -93,10 +78,6 @@ private:
     bool             m_is_paused = false;
     double           m_speed = 24.0;
     bool             m_has_video = false;
-#ifdef USE_OPENCV
-    cv::VideoCapture m_video_capture;
-    cv::Mat          m_current_frame;
-#else
     AVFormatContext *m_fmt_ctx = nullptr;
     AVCodecContext  *m_codec_ctx = nullptr;
     SwsContext      *m_sws_ctx = nullptr;
@@ -115,8 +96,6 @@ private:
     int              m_dest_linesize[1] = { 0 };
     bool             m_receive_more_frames = true;
     QImage           m_current_frame;
-#endif
-
     bool             m_is_recording = false;
     LPVideoOutput   *m_output_video = nullptr;
 };

@@ -41,17 +41,6 @@ LPVideoInput::LPVideoInput() :
 
 void LPVideoInput::begin(const QString &path, int rendered_width, int rendered_height) {
 
-#ifdef USE_OPENCV
-
-    m_video_capture = cv::VideoCapture(path.toStdString());
-    m_has_video = m_video_capture.isOpened();
-    if (m_has_video) {
-        m_total_frame_num = m_video_capture.get(cv::CAP_PROP_FRAME_COUNT);
-        m_current_frame_num = 0.0;
-    }
-
-#else
-
     m_has_video = false;
 
     if (m_fmt_ctx)
@@ -147,7 +136,6 @@ void LPVideoInput::begin(const QString &path, int rendered_width, int rendered_h
     //m_total_frame_num = m_fmt_ctx->streams[m_video_stream_index]->nb_frames;
 
     m_has_video = true;
-#endif
 
     m_playback_pos = 0;
 
@@ -236,11 +224,6 @@ void LPVideoInput::setPosition(double percentage) {
     else if (percentage > 1.0)
         percentage = 1.0;
 
-    //m_current_frame_num = percentage * m_total_frame_num;
-
-#ifdef USE_OPENCV
-    m_video_capture.set(cv::CAP_PROP_POS_FRAMES, m_current_frame_num);
-#else
     m_receive_more_frames = false;
 
     if (!(m_fmt_ctx->pb->seekable & AVIO_SEEKABLE_NORMAL)) {
@@ -272,7 +255,6 @@ void LPVideoInput::setPosition(double percentage) {
     avcodec_flush_buffers(m_codec_ctx);
 
     m_playback_pos = (int64_t)(m_total_file_len * percentage);
-#endif
 
     m_is_paused = false;
 }
@@ -313,21 +295,6 @@ bool LPVideoInput::update(bool force_frame) {
 
     if (!m_has_video || (m_is_paused && !force_frame))
         return false;
-
-#ifdef USE_OPENCV
-    if (!m_video_capture.read(m_current_frame)) {
-        printf("Bad frame!\n");
-        m_is_paused = true;
-        return false;
-    }
-
-    // Move the position
-    m_current_frame_num = m_video_capture.get(cv::CAP_PROP_POS_FRAMES);
-
-    //printf("Frame = %f\n", frame_num);
-
-    return true;
-#else
 
     // Any outstanding frames to receive from last time?
     if (m_receive_more_frames) {
@@ -373,9 +340,9 @@ bool LPVideoInput::update(bool force_frame) {
     }
 
     printf("End of video\n");
+
     m_is_paused = true;
     return false;
-#endif
 }
 
 bool LPVideoInput::getCurrentFrame(QImage &return_frame_image) {
