@@ -126,6 +126,8 @@
 
         const CUBEMAPS = loadCubemapsSync("cubemaps.txt");
 
+        const SETTINGS = loadCubemapsSync("settings.txt");
+
         // --- Scene Setup ---
         let scene, camera, renderer, controls;
         const canvas = document.getElementById('cubemap-canvas');
@@ -135,7 +137,13 @@
         const toggleControlsBtn = document.getElementById('toggle-controls-btn');
         const toggleIconOn = document.getElementById('toggle-icon-on');
         const toggleIconOff = document.getElementById('toggle-icon-off');
+        let cameraVerticalFOV = 65;
 
+        // If the settings mentions the vertical FOV, use it
+        if (Object.hasOwn(SETTINGS, "vertical_fov")) {
+           cameraVerticalFOV = parseInt(SETTINGS["vertical_fov"]);
+        }
+ 
         // Initializes the Three.js scene, camera, renderer, and controls.
         function init() {
 
@@ -144,7 +152,7 @@
             scene.background = new THREE.Color(0x1f2937); // Dark gray background
 
             // Camera
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera = new THREE.PerspectiveCamera(cameraVerticalFOV, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.z = 2;
 
             // Renderer

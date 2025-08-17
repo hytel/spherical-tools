@@ -75,7 +75,7 @@ You should see your cubemap come up.  it should look something like:
 
 ![alt text](docs/cubemap_web.jpg?raw=true "Cubemap DDS Web Viewer")
 
-You can use the mouse to spin the view around.  There is also a symbol in the bottom right of the page which will show the controls so you can pick a different cubemap from your selection in the cubemaps.txt file.  The controls do come up for a split second when the page is first loaded, but I have the HTML automatically select the first cubemap which causes the controls to slowly hide until the button is pressed.
+You can use the mouse to spin the view around.  There is also a symbol in the bottom right of the page which will show the controls so you can pick a different cubemap from your selection in the cubemaps.txt file.  The controls do come up for a split second when the page is first loaded, but I have the HTML automatically select the first cubemap which causes the controls to slowly hide until the button is pressed.  There is also a settings.txt file that is loaded at the start.  Right now only one parameter is accepted, "vertical_fov" which specifies how wide the camera field-of-view should be vertically in degrees.  More will be added over time.
 
 For 360 degree spherical video and still image reframing, I wrote a Qt application called SphericalQt.  OpenCV is also required by the application for image processing.  It is located in the SphericalQt subfolder, and can be built by CMake as follows:
 
