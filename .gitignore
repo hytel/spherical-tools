@@ -42,6 +42,7 @@
 
 # Ignore build folder for utility
 utility/build/
+utility/image_to_cubemap
 SphericalQt/build/
 
 # Ignore Mac Files
